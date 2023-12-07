@@ -13,6 +13,16 @@ async function main() {
   await mintNFT.deployed();
 
   console.log(`MintNFT deployed to: ${mintNFT.address}`);
+
+  const RestrictedCollection = await ethers.getContractFactory("RestrictedCollection");
+
+  const restrictedCollection =  await RestrictedCollection.deploy(mintNFT.address);
+
+  await restrictedCollection.deployed();
+
+  console.log(`MintNFT deployed to: ${restrictedCollection.address}`);
+
+
 }
 
 main().catch((error) => {
