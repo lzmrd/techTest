@@ -6,24 +6,11 @@ import { ethers } from 'ethers';
 export class NftController {
     constructor(private readonly nftService: NftService) {}
 
-    /* @Post('mint')
-    async mintNFT(
-        @Req
-        @Body() body: { userAddress: string })
-        @Res
-        {
-        try {
-            console.log('user address:', body.userAddress)
-            const result = await this.nftService.mintNft(body.userAddress);
-            return { transactionHash: result };
-        } catch (error) {
-            throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-}
- */
+
 @Post('mint')
-async mint(@Body() body: { userAddress: string }) {
+async mint(
+    @Body() body: { userAddress: string }) 
+    {
     if (!body.userAddress || !ethers.isAddress(body.userAddress)) {
         throw new HttpException('Invalid user address', HttpStatus.BAD_REQUEST);
     }

@@ -1,14 +1,15 @@
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IFirstContract {
     function balanceOf(address owner) external view returns (uint256);
 }
 
-contract RestrictedCollection is ERC721, Ownable {
+contract RestrictedCollection is ERC721URIStorage, Ownable {
     address public firstContractAddress;
 
     uint256 public constant MAX_SUPPLY = 40;
@@ -21,7 +22,7 @@ contract RestrictedCollection is ERC721, Ownable {
     mapping(uint256 => string) public customNames;
 
     event NameChanged(uint256 indexed tokenId, string newName);
-
+    event TokenMinted(uint256 indexed tokenId, address owner);
 
     constructor(address _firstContractAddress) ERC721("MintNFTSecond", "M2NFT") Ownable(msg.sender) {
         firstContractAddress = _firstContractAddress;
@@ -29,7 +30,7 @@ contract RestrictedCollection is ERC721, Ownable {
 
     function mintNFT(uint256 numberOfTokens) public payable {
         require(mintedCount + numberOfTokens <= MAX_SUPPLY, "Max supply exceeded");
-        require(numberOfTokens <= MAX_PER_TX, "Exceeds max per transaction");  
+        require(numberOfTokens <= MAX_PER_TX, "Exceeds max per transaction");
 
         IFirstContract firstContractInstance = IFirstContract(firstContractAddress);
         require(firstContractInstance.balanceOf(msg.sender) > 0, "Must own a first NFT");
@@ -46,6 +47,7 @@ contract RestrictedCollection is ERC721, Ownable {
         for (uint256 i = 0; i < numberOfTokens; i++) {
             mintedCount++;
             _mint(msg.sender, mintedCount);
+            emit TokenMinted(mintedCount, msg.sender);
         }
     }
 
@@ -57,5 +59,8 @@ contract RestrictedCollection is ERC721, Ownable {
         emit NameChanged(tokenId, name);
     }
 
-    // Altre funzioni necessarie...
+    function setTokenURI(uint256 tokenId, string memory _tokenURI) public onlyOwner {
+        _setTokenURI(tokenId, _tokenURI);
+    }
+
 }

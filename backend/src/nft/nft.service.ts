@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 require('dotenv').config();
-const jsonPath = join(__dirname, '../../../hardhat/artifacts/contracts/mintNFT.sol/mintNFT.json');
+const jsonPath = join(__dirname, '../../../../hardhat/artifacts/contracts/mintNFT.sol/mintNFT.json');
 const contractABI = JSON.parse(readFileSync(jsonPath, 'utf-8')).abi;
 
 @Injectable()
