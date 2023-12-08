@@ -46,3 +46,5 @@ This project involves the creation of two smart contracts on the Sepolia network
 - Headers: `Content-Type: application/json`
 - Body: `{"userAddress": "0x000000000000000000000000000000000"}`
 In this way your backend will be triggered from that request and it will send a transaction to your smart contract which will mint one NFT to address you specified in Body.
+
+MORE INSTRUCTIONS ARRIVE SOON
