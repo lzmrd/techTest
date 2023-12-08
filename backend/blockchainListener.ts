@@ -1,9 +1,11 @@
 // src/listeners/blockchain.listener.ts
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { ethers } from 'ethers';
+import { ethers, Contract } from 'ethers';
 import axios from 'axios';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+//import { RestrictedCollectionContract } from 'interface';
+import { EtherscanProvider } from '@ethersproject/providers';
 require('dotenv').config();
 
 const jsonPath = join(__dirname, '../../hardhat/artifacts/contracts/newCollection.sol/RestrictedCollection.json');
@@ -14,15 +16,27 @@ const GATEWAY_KEY = process.env.GATEWAY_KEY
 
 @Injectable()
 export class BlockchainListenerService implements OnModuleInit {
+  private txProvider: ethers.JsonRpcProvider;
   private provider: ethers.WebSocketProvider;
   private nftContract: ethers.Contract;
+  private nftContractTx: ethers.Contract;
+  private wallet: ethers.Wallet;
+
 
   constructor() {
+    this.txProvider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
     this.provider = new ethers.WebSocketProvider(process.env.ALCHEMY_WEBSOCKET_API_KEY);
+    this.wallet = new ethers.Wallet(process.env.PRIVATE_KEY, this.txProvider);
+
     this.nftContract = new ethers.Contract(
       process.env.MINT_SECOND_CONTRACT_ADDRESS,
       contractABI,
       this.provider
+    );
+    this.nftContractTx = new ethers.Contract(
+      process.env.MINT_SECOND_CONTRACT_ADDRESS,
+      contractABI,
+      this.wallet
     );
   }
 
@@ -91,25 +105,19 @@ export class BlockchainListenerService implements OnModuleInit {
 }
   }
   
-
-  private async updateTokenURI(tokenId: number, metadataUrl: string) {
-    // Crea un signer con i permessi necessari per chiamare la funzione setTokenURI
-    const signer = new ethers.Wallet(process.env.PRIVATE_KEY, this.provider);
-  
-    // Crea un'istanza del contratto con il signer per poter eseguire transazioni
-    const nftContractWithSigner = this.nftContract.connect(signer);
-  
+  private async updateTokenURI(tokenId: number, metadataUrl: string): Promise<string> {
+  console.log('Updating token URI...');
     try {
-      // Formatta l'URL completo dei metadati su Pinata
+      const tx = await this.nftContractTx.setTokenURI(tokenId, metadataUrl);
+      await tx.wait(); // Attendi la conferma della transazione
   
-      // Chiama la funzione setTokenURI sullo smart contract
-      const tx = await nftContractWithSigner.setTokenURI(tokenId, metadataUrl);
-      await tx.wait();
       console.log(`Token URI updated for token #${tokenId}: ${metadataUrl}`);
+      return tx;
     } catch (error) {
       console.error('Errore nell\'aggiornamento del Token URI:', error);
+      return '';
     }
   }
-  
+ 
 }
 

@@ -16,7 +16,7 @@ async function main() {
 
   const RestrictedCollection = await ethers.getContractFactory("RestrictedCollection");
 
-  const restrictedCollection =  await RestrictedCollection.deploy(/* mintNFT.address */);
+  const restrictedCollection =  await RestrictedCollection.deploy(mintNFT.address);
 
   await restrictedCollection.deployed();
 
