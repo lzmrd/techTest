@@ -38,7 +38,9 @@ This project involves the creation of two smart contracts on the Sepolia network
 3. Create API keys from providers like Alchemy or Infura to be able of interacting with Sepolia testnet.
 4. Move to hardhat directory and run `npx hardhat compile` to generate your contractABI to interact with.
 5. Run `npx hardhat run scripts/deploy.ts --network sepolia` and your contracts will be deployed on Sepolia testnet.
-6. Move to backend directory and run `nest start` to start your backend server.
+6. Run `npx hardhat verify --network sepolia ${secondSmartContract} ${firstSmartContract}`.
+In this way your second smart contract will be verified on etherscan and you will be able to interact with it.
+7. Move to backend directory and run `npm run start:dev` to start your backend server.
 
 # Usage
 
@@ -47,4 +49,8 @@ This project involves the creation of two smart contracts on the Sepolia network
 - Body: `{"userAddress": "0x000000000000000000000000000000000"}`
 In this way your backend will be triggered from that request and it will send a transaction to your smart contract which will mint one NFT to address you specified in Body.
 
-MORE INSTRUCTIONS ARRIVE SOON
+2. Whoever owns a NFT from first collection will be able to call `mintNFT` function on second smart contract directly connecting its wallet to etherscan. 
+
+3. Whoever owns a NFT from second collection will be able to call `purchaseCustomName` function to change the name of his NFT
+
+4. If Nest server is on, it will listen to events emitted from `mintNFT` and `purchaseCustomName` functions and it will trigger `setTokenUri` function on second smart contract, which will link each tokenId to an url which contains NFT's metadata.
