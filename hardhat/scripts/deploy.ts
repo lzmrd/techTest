@@ -1,32 +1,22 @@
 import { ethers } from "hardhat";
 
-
 async function main() {
-  // Ottieni il Contract Factory per il tuo contratto MintNFT
-  const MintNFT = await ethers.getContractFactory("mintNFT");
+  const MintNFT = await ethers.getContractFactory("mintNFT"); // Obtains ContractFactory for mintNFT
 
-  // Effettua il deploy del contratto
-//  const mintNFT = await MintNFT_relayer.deploy(RELAYER_ADDRESS);
-  const mintNFT = await MintNFT.deploy();
+  const mintNFT = await MintNFT.deploy(); // Deploys the mintNFT contract
+  await mintNFT.deployed(); // Ensures deployment completion
 
-  // Aspetta che il deploy sia completato
-  await mintNFT.deployed();
+  console.log(`MintNFT deployed to: ${mintNFT.address}`); // Logs the deployed contract address
 
-  console.log(`MintNFT deployed to: ${mintNFT.address}`);
+  const RestrictedCollection = await ethers.getContractFactory("RestrictedCollection"); // Obtains ContractFactory for RestrictedCollection
 
-  const RestrictedCollection = await ethers.getContractFactory("RestrictedCollection");
+  const restrictedCollection = await RestrictedCollection.deploy(mintNFT.address); // Deploys RestrictedCollection with mintNFT address
+  await restrictedCollection.deployed(); // Ensures deployment completion
 
-  const restrictedCollection =  await RestrictedCollection.deploy(mintNFT.address);
-
-  await restrictedCollection.deployed();
-
-  console.log(`MintNFT deployed to: ${restrictedCollection.address}`);
-
-
+  console.log(`RestrictedCollection deployed to: ${restrictedCollection.address}`); // Logs the deployed contract address
 }
 
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-

@@ -1,18 +1,16 @@
-// src/listeners/blockchain.listener.ts
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ethers, Contract } from 'ethers';
 import axios from 'axios';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-//import { RestrictedCollectionContract } from 'interface';
 import { EtherscanProvider } from '@ethersproject/providers';
 require('dotenv').config();
 
 const jsonPath = join(__dirname, '../../hardhat/artifacts/contracts/newCollection.sol/RestrictedCollection.json');
 const contractABI = JSON.parse(readFileSync(jsonPath, 'utf-8')).abi;
-const JWT = process.env.PINATA_JWT;
-const GATEWAY_KEY = process.env.GATEWAY_KEY
 
+const JWT = process.env.PINATA_JWT;  
+const GATEWAY_KEY = process.env.GATEWAY_KEY;
 
 @Injectable()
 export class BlockchainListenerService implements OnModuleInit {
@@ -22,18 +20,17 @@ export class BlockchainListenerService implements OnModuleInit {
   private nftContractTx: ethers.Contract;
   private wallet: ethers.Wallet;
 
-
   constructor() {
-    this.txProvider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
-    this.provider = new ethers.WebSocketProvider(process.env.ALCHEMY_WEBSOCKET_API_KEY);
-    this.wallet = new ethers.Wallet(process.env.PRIVATE_KEY, this.txProvider);
+    this.txProvider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL); // Set transaction provider
+    this.provider = new ethers.WebSocketProvider(process.env.ALCHEMY_WEBSOCKET_API_KEY); // Set WebSocket provider
+    this.wallet = new ethers.Wallet(process.env.PRIVATE_KEY, this.txProvider); // Set your wallet
 
-    this.nftContract = new ethers.Contract(
+    this.nftContract = new ethers.Contract(       // Set smart contrcat you want interact with
       process.env.MINT_SECOND_CONTRACT_ADDRESS,
       contractABI,
       this.provider
     );
-    this.nftContractTx = new ethers.Contract(
+    this.nftContractTx = new ethers.Contract(    // Set smart contrcat you want interact with
       process.env.MINT_SECOND_CONTRACT_ADDRESS,
       contractABI,
       this.wallet
@@ -41,83 +38,44 @@ export class BlockchainListenerService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.listenToNewMint();
-    this.listenToCustomNames();
+    this.listenToNewMint(); // Listen to new mint events
+    this.listenToCustomNames(); // Listen to custom names events
   }
 
-  private listenToNewMint() {
+  private listenToNewMint() {            // it catches 'TokenMinted' events emitted from smart contract
     this.nftContract.on('TokenMinted', async (mintedCount , owner,  event) => {
-      console.log(`NFT #${mintedCount} was minted to ${owner} `);
-      const metadataUrl = await this.uploadNewNftToIpfs(mintedCount, owner);
+      console.log(`NFT #${mintedCount} was minted to ${owner}`);
+      const metadataUrl = await this.uploadNewNftToIpfs(mintedCount, owner);  //it create its metadata URL
       await this.updateTokenURI(mintedCount, metadataUrl);
     });
   }
-
-  private async uploadNewNftToIpfs(mintedCount: number, owner: string): Promise<string> {
-    const metadata = {
-      name: `NFT #${mintedCount}`,
-      owner: `Owner: ${owner}`
-    };
-    try{
-    const response = await axios.post('https://api.pinata.cloud/pinning/pinJSONToIPFS', metadata, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${JWT}`
-      }
-    });
-    const url = `https://coral-used-orca-101.mypinata.cloud/ipfs/${response.data.IpfsHash}?pinataGatewayToken=${GATEWAY_KEY}`;
-    console.log('Url: ', url);
-
-    return url; 
-  }   catch (error){
-        console.error('Errore nel caricamento su Pinata:',error);
-        return '';
-    }
-  }
-
-  private listenToCustomNames() {
-    this.nftContract.on('NameChanged', async (tokenId, newName,  event) => {
+  private listenToCustomNames() {         // it catches 'NameChanged' events emitted from smart contract
+    this.nftContract.on('NameChanged', async (tokenId, newName,  event) => {  
       console.log(`NFT #${tokenId} has changed its name in ${newName}`);
-      const metadataUrl = await this.uploadMetadataToIpfs(tokenId, newName);
+      const metadataUrl = await this.uploadMetadataToIpfs(tokenId, newName);  //it updates its metadata URL
+
       await this.updateTokenURI(tokenId, metadataUrl);
     });
   }
 
-  private async uploadMetadataToIpfs(tokenId: number, newName: string): Promise<string> {
-    const metadata = {
-      name: `NFT #${newName}`,
-      description: `Descrizione dell'NFT #${newName}`,
-      image: `url dell'immagine dell'NFT #${newName}`
+  private async uploadNewNftToIpfs(mintedCount: number, owner: string): Promise<string> {
+    const metadata = {                  // metadata will be uploaded on IPFS
+      name: `NFT #${mintedCount}`,
+      owner: `Owner: ${owner}`
     };
-    try{
-    const response = await axios.post('https://api.pinata.cloud/pinning/pinJSONToIPFS', metadata, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${JWT}`
-      }
-    });
-    const url = `https://coral-used-orca-101.mypinata.cloud/ipfs/${response.data.IpfsHash}?pinataGatewayToken=${GATEWAY_KEY}`;
-    console.log('Url: ', url);
-    return url; 
-} catch (error){
-  console.error('Errore nel caricamento su Pinata:',error);
-  return '';
-}
-  }
-  
-  private async updateTokenURI(tokenId: number, metadataUrl: string): Promise<string> {
-  console.log('Updating token URI...');
     try {
-      const tx = await this.nftContractTx.setTokenURI(tokenId, metadataUrl);
-      await tx.wait(); // Attendi la conferma della transazione
-  
-      console.log(`Token URI updated for token #${tokenId}: ${metadataUrl}`);
-      return tx;
+      const response = await axios.post('https://api.pinata.cloud/pinning/pinJSONToIPFS', metadata, {   //it calls the endpoint which let you upload metadata on IPFS
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${JWT}`
+        }
+      });
+      const url = `https://coral-used-orca-101.mypinata.cloud/ipfs/${response.data.IpfsHash}?pinataGatewayToken=${GATEWAY_KEY}`;  // it's the url where you will find your NFT's metadata
+      console.log('Url: ', url);
+      return url;
     } catch (error) {
-      console.error('Errore nell\'aggiornamento del Token URI:', error);
+      console.error('Error uploading to Pinata:', error);
       return '';
     }
   }
- 
 }
-
